@@ -211,8 +211,8 @@ class KvmCreate < Chef::Knife
       end
     end
     vpath = vpath + "/"
+    vpath[0] = ""
     cpath = vpath + clonevol
-    cpath[0] = ""
     # still finding a way to do an stream upload from the template to the newly created volume
     # but this cheat works for now - copy our template volume over the blank volume while the
     # VM is shut off... it is none the wiser when brought up becaue the xml is identical
