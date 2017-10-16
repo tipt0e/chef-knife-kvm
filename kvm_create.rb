@@ -223,7 +223,6 @@ class KvmCreate < Chef::Knife
       delvol = compute.volume_action( cpath, :delete )
       sleep(2)
     }
-    puts "got here"
 
     puts ["Powering on VM", newvm.name].join(" ")
 
