@@ -1,3 +1,6 @@
+# knife kvm delete 
+# (c) 2017 Michael Brown <mikal@bytepimps.net>
+#
 require 'rubygems'
 require 'rubygems/gem_runner'
 require 'fog'
