@@ -139,10 +139,11 @@ class KvmCreate < Chef::Knife
 
   def run
     kvmconf = Chef::Config[:knife]
-    kvmname = kvmconf[:kvmname]
     kvmvol = [kvmconf[:kvmname], ".qcow2"].join("")
     clonevol = [kvmconf[:kvmname], "_r.qcow2"].join("")
-    # defaults for bytepimps
+    # XXX defaults for bytepimps - change or
+    # eliminate to your liking - just here for
+    # testing convenience
     kvmconf[:template] ||= "centos-7-image.qcow2"
     kvmconf[:cpus] ||= 1
     kvmconf[:mem] ||= "1024"
@@ -194,8 +195,9 @@ class KvmCreate < Chef::Knife
     puts ["Volume created for VM ", kvmconf[:kvmname]].join("")
 
     # get volume_key for our volume to determine the absolute path
-    # to the volume pool where our cpit.sh cheat script is
+    # to the volume pool of our target 
     vpath = ""
+    volkey = ""
     compute.volumes.each do |vol|
       if vol.name == kvmvol
         volkey = vol.key
@@ -209,14 +211,19 @@ class KvmCreate < Chef::Knife
       end
     end
     vpath = vpath + "/"
-
+    cpath = vpath + clonevol
+    cpath[0] = ""
     # still finding a way to do an stream upload from the template to the newly created volume
     # but this cheat works for now - copy our template volume over the blank volume while the
     # VM is shut off... it is none the wiser when brought up becaue the xml is identical
     wait_spin {
-      copyit = system( ["ssh ", kvmconf[:hv], " 'sudo ", vpath, "cpit.sh ", newvm.name, "'"].join("") )
-      sleep(8)
+      Net::SSH.start("192.168.62.2", "root", :keys => "/root/.ssh/id_rsa") do |ssh|
+        ssh.exec!(["mv -f ", cpath, " ", volkey].join(""))
+      end	
+      delvol = compute.volume_action( cpath, :delete )
+      sleep(2)
     }
+    puts "got here"
 
     puts ["Powering on VM", newvm.name].join(" ")
 
