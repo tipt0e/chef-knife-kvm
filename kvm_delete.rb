@@ -23,42 +23,25 @@ class KvmDelete < Chef::Knife
   option :hv,
     :short => "-H HYPERVISOR",
     :long => "--hypervisor",
-    :description => "HYPERVISOR\n" \
-    "                         1: hydrogen\n" \
-    "                         2: helium\n",    
+    :description => "Hostname of KVM hypervisor",
     :proc => Proc.new { |t| Chef::Config[:knife][:hv] = t }
 
-  option :pool,
-    :short => "-X POOL",
-    :long => "--pool POOL",
-    :description => "COMPUTE POOL for VM - defaults to hydrogen: vm",
-    :proc => Proc.new { |t| Chef::Config[:knife][:pool] = t }
-
   def run
-    kvmname = Chef::Config[:knife][:kvmname]
-    kvmvol = [kvmname, ".qcow2"].join("")
+    kvmconf = Chef::Config[:knife] 
+    kvmvol = [kvmconf[:kvmname], ".qcow2"].join("")
 
-    unless kvmname
+    unless kvmconf[:kvmname]
       ui.error("Missing Node Name")
       exit 1
     end
 
-    Chef::Config[:knife][:hv] ||= 1
+    kvmconf[:hv] ||= "hydrogen"
 
-    hv = 
-    img = ""
-    pool = ""
-    if Chef::Config[:knife][:hv] == "1"
-      hv = "hydrogen"
-      pool = "vm"
-    elsif Chef::Config[:knife][:hv] == "2" 
-      hv = "helium"
-      pool = "kvm"
-    end
     compute = Fog::Compute.new({ :provider => "libvirt",
-				 :libvirt_uri => ["qemu+ssh://", hv, "/system"].join("")
+				 :libvirt_uri => ["qemu+ssh://", kvmconf[:hv], "/system"].join("")
                                })
 
+    # get volume key 
     voluuid = ""
     volname = ""
     compute.volumes.each do |vol|
@@ -67,15 +50,17 @@ class KvmDelete < Chef::Knife
       end
     end 
     
+    # get vm uuid
     vmuuid = ""
     vmname = ""
     compute.servers.each do |server|
-      if server.name.to_s == kvmname 
+      if server.name.to_s == kvmconf[:kvmname]
         vmname = server.name.to_s
 	vmuuid = server.uuid
       end
     end 
  
+    # tear it down
     puts ["Deleting VM", vmname].join(" ")
     delvm = compute.vm_action( vmuuid, :undefine )
     offvm = compute.vm_action( vmuuid, :destroy)
