@@ -54,7 +54,7 @@ class KvmList < Chef::Knife
     end
 
     unless config[:lkvm] || config[:lvol]
-      ui.error("Choose --lvol for volumes or --lkvm for VMs")
+      ui.error("Choose --lvol for VOLUMES or --lkvm for VMs")
       exit 1
     end
 
