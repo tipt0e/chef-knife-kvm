@@ -17,6 +17,18 @@ require 'chef/knife/bootstrap'
 class KvmCreate < Chef::Knife
 
   banner "knife kvm create (options)"
+
+  option :usr,
+    :short => "-U USERNAME",
+    :long => "--username USERNAME",
+    :description => "SSH username",
+    :proc => Proc.new { |username| Chef::Config[:knife][:usr] = username }
+
+  option :pwd,
+    :short => "-P PASSWORD",
+    :long => "--password PASSWORD",
+    :description => "SSH password",
+    :proc => Proc.new { |key| Chef::Config[:knife][:pwd] = key }
    
   option :kvmname,
     :short => "-N NAME",
@@ -200,7 +212,7 @@ class KvmCreate < Chef::Knife
 
     # still finding a way to do an stream upload from the template to the newly created volume
     # but this cheat works for now - copy our template volume over the blank volume while the
-    # VM is shut off... it is none the wiser when brought up because the xml is identical
+    # VM is shut off... it is none the wiser when brought up becaue the xml is identical
     wait_spin {
       copyit = system( ["ssh ", kvmconf[:hv], " 'sudo ", vpath, "cpit.sh ", newvm.name, "'"].join("") )
       sleep(8)

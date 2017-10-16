@@ -16,6 +16,18 @@ require 'chef/json_compat'
 class KvmDelete < Chef::Knife
 
   banner "knife kvm delete (options)"
+
+  option :usr,
+    :short => "-U USERNAME",
+    :long => "--username USERNAME",
+    :description => "SSH username",
+    :proc => Proc.new { |username| Chef::Config[:knife][:usr] = username }
+
+  option :pwd,
+    :short => "-P PASSWORD",
+    :long => "--password PASSWORD",
+    :description => "SSH password",
+    :proc => Proc.new { |key| Chef::Config[:knife][:pwd] = key }
    
   option :kvmname,
     :short => "-N NAME",
@@ -28,6 +40,7 @@ class KvmDelete < Chef::Knife
     :long => "--hypervisor",
     :description => "Hostname of KVM hypervisor",
     :proc => Proc.new { |t| Chef::Config[:knife][:hv] = t }
+
 
   def run
     kvmconf = Chef::Config[:knife] 
