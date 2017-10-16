@@ -50,7 +50,7 @@ class KvmCreate < Chef::Knife
   option :template,
     :short => "-O OS_IMAGE",
     :long => "--osimage IMAGE",
-    :description => "OS image to use (VOLUME NAME)",
+    :description => "OS image template to use (VOLUME NAME)",
     :proc => Proc.new { |t| Chef::Config[:knife][:template] = t }
 
   option :runlist,
@@ -64,12 +64,6 @@ class KvmCreate < Chef::Knife
     :long => "--pool POOL",
     :description => "COMPUTE POOL for VM - defaults to hydrogen: vm",
     :proc => Proc.new { |t| Chef::Config[:knife][:pool] = t }
-
-  option :volkey,
-    :short => "-V VOLUME_KEY",
-    :long => "--volkey VOLUME_KEY",
-    :description => "VOLUME_KEY - full path to volume in filesystem",
-    :proc => Proc.new { |t| Chef::Config[:knife][:volkey] = t }
 
   option :cpus,
     :short => "-C CPUs",
