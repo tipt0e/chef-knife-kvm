@@ -33,13 +33,13 @@ class KvmDelete < Chef::Knife
     :short => "-N NAME",
     :long => "--node-name NAME",
     :description => "The Name of the VM to delete",
-    :proc => Proc.new { |t| Chef::Config[:knife][:kvmname] = t }
+    :proc => Proc.new { |n| Chef::Config[:knife][:kvmname] = n }
 
   option :hv,
     :short => "-H HYPERVISOR",
     :long => "--hypervisor",
     :description => "Hostname of KVM hypervisor",
-    :proc => Proc.new { |t| Chef::Config[:knife][:hv] = t }
+    :proc => Proc.new { |h| Chef::Config[:knife][:hv] = h }
 
 
   def run

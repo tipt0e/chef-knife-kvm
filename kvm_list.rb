@@ -32,7 +32,7 @@ class KvmList < Chef::Knife
     :short => "-H HYPERVISOR",
     :long => "--hypervisor",
     :description => "Hostname of KVM hypervisor",
-    :proc => Proc.new { |t| Chef::Config[:knife][:hv] = t }
+    :proc => Proc.new { |h| Chef::Config[:knife][:hv] = h }
 
   option :lkvm,
     :long => "--lkvm",

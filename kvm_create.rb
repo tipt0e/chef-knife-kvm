@@ -34,19 +34,19 @@ class KvmCreate < Chef::Knife
     :short => "-N NAME",
     :long => "--node-name NAME",
     :description => "The Name of the new VM",
-    :proc => Proc.new { |t| Chef::Config[:knife][:kvmname] = t }
+    :proc => Proc.new { |n| Chef::Config[:knife][:kvmname] = n }
 
   option :kvmip,
     :short => "-I IP",
     :long => "--ip IP",
     :description => "IP Address for VM",
-    :proc => Proc.new { |t| Chef::Config[:knife][:kvmip] = t }
+    :proc => Proc.new { |i| Chef::Config[:knife][:kvmip] = i }
 
   option :oldip,
     :short => "-Q IP",
     :long => "--old-ip IP",
     :description => "Orginal IP Address from cloned image",
-    :proc => Proc.new { |t| Chef::Config[:knife][:oldip] = t }
+    :proc => Proc.new { |q| Chef::Config[:knife][:oldip] = q }
   
   option :strap,
     :short => "-B",
@@ -57,49 +57,49 @@ class KvmCreate < Chef::Knife
     :short => "-H HYPERVISOR",
     :long => "--hv HYPERVISOR",
     :description => "Hostname of KVM hypervisor",
-    :proc => Proc.new { |t| Chef::Config[:knife][:hv] = t }
+    :proc => Proc.new { |h| Chef::Config[:knife][:hv] = h }
   
   option :template,
     :short => "-O OS_IMAGE",
     :long => "--osimage IMAGE",
     :description => "OS image template to use (VOLUME NAME)",
-    :proc => Proc.new { |t| Chef::Config[:knife][:template] = t }
+    :proc => Proc.new { |o| Chef::Config[:knife][:template] = o }
 
   option :runlist,
     :short => "-r RUN_LIST",
     :long => "--run-list RUN_LIST",
     :description => "Comma separated list of roles/recipes to apply",
-    :proc => lambda { |o| o.split(/[\s,]+/) }
+    :proc => lambda { |r| r.split(/[\s,]+/) }
 
   option :pool,
     :short => "-X POOL",
     :long => "--pool POOL",
     :description => "COMPUTE POOL for VM - defaults to hydrogen: vm",
-    :proc => Proc.new { |t| Chef::Config[:knife][:pool] = t }
+    :proc => Proc.new { |x| Chef::Config[:knife][:pool] = x }
 
   option :cpus,
     :short => "-C CPUs",
     :long => "--cpus CPUs",
     :description => "# of CPUs for VM",
-    :proc => Proc.new { |t| Chef::Config[:knife][:cpus] = t }
+    :proc => Proc.new { |c| Chef::Config[:knife][:cpus] = c }
 
   option :mem,
     :short => "-M MEMORY",
     :long => "--mem MEMORY",
     :description => "Memory for VM in MB ( -M 2048 ) defaults to 1024",
-    :proc => Proc.new { |t| Chef::Config[:knife][:mem] = t }
+    :proc => Proc.new { |m| Chef::Config[:knife][:mem] = m }
 
   option :disk,
     :short => "-D DISK_SIZE",
     :long => "--disk DISK_SIZE",
     :description => "Capacity for vdisk volume in GB ( -D 10G )",
-    :proc => Proc.new { |t| Chef::Config[:knife][:disk] = t }
+    :proc => Proc.new { |d| Chef::Config[:knife][:disk] = d }
 
   option :alloc,
     :short => "-A DISK_ALLOC",
     :long => "--alloc DISK_ALLOC",
     :description => "Storage allocation for vdisk volume in MB or GB ( -A 5120M or -A 1G )",
-    :proc => Proc.new { |t| Chef::Config[:knife][:alloc] = t }
+    :proc => Proc.new { |a| Chef::Config[:knife][:alloc] = a }
 
   option :itype,
     :short => "-T INT_TYPE",
@@ -111,13 +111,13 @@ class KvmCreate < Chef::Knife
     :short => "-K INTERFACE",
     :long => "--iface INT_TYPE",
     :description => "Hypervisor network interface to choose",
-    :proc => Proc.new { |t| Chef::Config[:knife][:iface] = t }
+    :proc => Proc.new { |k| Chef::Config[:knife][:iface] = k }
   
   option :realm,
     :short => "-R REALM",
     :long => "--realm REALM",
     :description => "Domain / realm to have FQDN for chef node/client names",
-    :proc => Proc.new { |t| Chef::Config[:knife][:iface] = t }
+    :proc => Proc.new { |z| Chef::Config[:knife][:iface] = z }
 
   # spinner - mostly useless
   def wait_spin(fps = 10)11
