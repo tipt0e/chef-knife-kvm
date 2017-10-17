@@ -101,6 +101,12 @@ class KvmCreate < Chef::Knife
     :description => "Storage allocation for vdisk volume in MB or GB ( -A 5120M or -A 1G )",
     :proc => Proc.new { |a| Chef::Config[:knife][:alloc] = a }
 
+  option :volfmt,
+    :short => "-F VOLUME_FMT",
+    :long => "--fmt VOLUME_FMT",
+    :description => "Disk format for volume ( qcow2/img/raw ) defaults to qcow2",
+    :proc => Proc.new { |f| Chef::Config[:knife][:volfmt] = f }
+
   option :itype,
     :short => "-T INT_TYPE",
     :long => "--itype INT_TYPE",
@@ -164,6 +170,7 @@ class KvmCreate < Chef::Knife
       oldip = kvmconf[:oldip] 
     end
     # ^ end hardcodes ^
+    kvmconf[:volfmt] ||= "qcow2"
 
     unless kvmconf[:kvmname] && kvmconf[:kvmip] && kvmconf[:oldip] 
       ui.error("Missing one of New Node Name/Old IP Address/New IP Address")
@@ -186,7 +193,7 @@ class KvmCreate < Chef::Knife
                       { :name => kvmconf[:kvmname],
 		        :volume_pool_name => kvmconf[:pool],
 			:volume_capacity => kvmconf[:disk],
-			:volume_format_type => 'qcow2',
+			:volume_format_type => kvmconf[:volfmt],
 			:allocation => kvmconf[:alloc],
 			:network_interface_type => kvmconf[:itype],
 		        :network_bridge_name => kvmconf[:iface],
