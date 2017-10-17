@@ -220,7 +220,7 @@ class KvmCreate < Chef::Knife
     # VM is shut off... it is none the wiser when brought up becaue the xml is identical
     # Also an argument for the SSH key - ~/.ssh for now
     wait_spin {
-      Net::SSH.start(kvmconf[:hv], kvmconf[usr], :keys => "~/.ssh/id_rsa") do |ssh|
+      Net::SSH.start(kvmconf[:hv], kvmconf[:usr], :keys => "~/.ssh/id_rsa") do |ssh|
         ssh.exec!(["mv -f ", cpath, " ", volkey].join(""))
       end	
       delvol = compute.volume_action( cpath, :delete )
