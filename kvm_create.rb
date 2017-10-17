@@ -152,7 +152,6 @@ class KvmCreate < Chef::Knife
     kvmconf[:alloc] ||= "5120M"
     kvmconf[:pool] ||= "vm"
     kvmconf[:hv] ||= "hydrogen"
-    kvmconf[:volkey] ||= ["/data/vm/", kvmvol].join("")
     kvmconf[:itype] ||= "bridge"
     kvmconf[:iface] ||= "br0"
     kvmconf[:oldip] ||= "192.168.62.56"
