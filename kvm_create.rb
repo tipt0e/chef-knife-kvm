@@ -141,6 +141,7 @@ class KvmCreate < Chef::Knife
     kvmconf = Chef::Config[:knife]
     kvmvol = [kvmconf[:kvmname], ".qcow2"].join("")
     clonevol = [kvmconf[:kvmname], "_r.qcow2"].join("")
+    mem = kvmconf[:mem].to_i * 1024 
     # XXX defaults for bytepimps - change or
     # eliminate to your liking - just here for
     # testing convenience
@@ -156,20 +157,21 @@ class KvmCreate < Chef::Knife
     kvmconf[:iface] ||= "br0"
     kvmconf[:oldip] ||= "192.168.62.56"
     kvmconf[:realm] ||= ".bytepimps.net"
-    mem = kvmconf[:mem].to_i * 1024 
-
+    kvmconf[:usr] ||= "root"
     oldip = ""
     if kvmconf[:hv] == "helium"
       oldip = "192.168.62.156"
     else
       oldip = kvmconf[:oldip] 
     end
+    # ^ end hardcodes ^
 
     unless kvmconf[:kvmname] && kvmconf[:kvmip] && kvmconf[:oldip] 
       ui.error("Missing one of New Node Name/Old IP Address/New IP Address")
       exit 1
     end
 
+    # set hypervisor address - if needed change protocol here for now
     virturi = ["qemu+ssh://", kvmconf[:hv], "/system"].join("")
     compute = Fog::Compute.new({ :provider => "libvirt",
 				 :libvirt_uri => virturi
@@ -177,6 +179,7 @@ class KvmCreate < Chef::Knife
 
     wait_spin {
       puts ["Creating volume", kvmvol, "for VM", kvmconf[:kvmname]].join(" ")
+      # cheating - need to use API
       res = system( ["virsh -c", virturi, "vol-clone", kvmconf[:template], clonevol, "--pool", kvmconf[:pool]].join(" ") )
     }
     # spin it up
@@ -216,8 +219,9 @@ class KvmCreate < Chef::Knife
     # still finding a way to do an stream upload from the template to the newly created volume
     # but this cheat works for now - copy our template volume over the blank volume while the
     # VM is shut off... it is none the wiser when brought up becaue the xml is identical
+    # Also an argument for the SSH key - ~/.ssh for now
     wait_spin {
-      Net::SSH.start("192.168.62.2", "root", :keys => "/root/.ssh/id_rsa") do |ssh|
+      Net::SSH.start(kvmconf[:hv], kvmconf[usr], :keys => "~/.ssh/id_rsa") do |ssh|
         ssh.exec!(["mv -f ", cpath, " ", volkey].join(""))
       end	
       delvol = compute.volume_action( cpath, :delete )
@@ -246,7 +250,7 @@ class KvmCreate < Chef::Knife
 
     # some minor configuration setup - hostname/IP
     wait_spin {
-      Net::SSH.start(oldip, "root", :keys => "/root/.ssh/id_rsa") do |ssh|
+      Net::SSH.start(oldip, kvmconf[:usr], :keys => "~/.ssh/id_rsa") do |ssh|
         ssh.exec!(["sudo echo ", newvm.name, " > /etc/hostname"].join(""))
 	ssh.exec!("for i in system password; do echo 'session    optional    pam_mkhomedir.so skel=/etc/skel umask=0077' >> /etc/pam.d/$i-auth-ac; done")
         ssh.exec("sleep 1")
@@ -274,11 +278,11 @@ class KvmCreate < Chef::Knife
   def bootstrap_node(server, host)
     bootstrap = Chef::Knife::Bootstrap.new
     bootstrap.name_args = host
-    #bootstrap.config[:ssh_user] = "cloud"
+    bootstrap.config[:ssh_user] = kvmconf[:usr] 
     # XXX will config
-    bootstrap.config[:identity_file] = "/root/.ssh/id_rsa"
+    bootstrap.config[:identity_file] = "~/.ssh/id_rsa"
     # XXX make command switch
-    bootstrap.config[:chef_node_name] = [server, kvmconf[realm]].join("")
+    bootstrap.config[:chef_node_name] = [server, kvmconf[:realm]].join("")
     #bootstrap.config[:chef_node_name] = [server, ".bytepimps.net"]
     bootstrap.config[:distro] = "chef-full"
     bootstrap.config[:run_list] = config[:runlist]
