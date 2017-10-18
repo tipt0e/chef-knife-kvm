@@ -268,7 +268,7 @@ class KvmCreate < Chef::Knife
         ssh.exec!(["sudo su -c 'echo ", newvm.name, " > /etc/hostname'"].join(""))
 	ssh.exec!("for i in system password; do sudo echo 'session    optional    pam_mkhomedir.so skel=/etc/skel umask=0077' >> /etc/pam.d/$i-auth-ac; done")
         ssh.exec("sleep 1")
-	# debian
+	# non network-manager debian
         #ssh.exec!(["sudo perl -p -i -e 's/", oldip, "/", kvmip, "/g' /etc/sysconfig/network-scripts/ifcfg-eth0"].join(""))
         ssh.exec!(["sudo nmcli c modify eth0 ipv4.address ", kvmip, "/24"].join(""))
         ssh.exec("sleep 1")
@@ -292,12 +292,11 @@ class KvmCreate < Chef::Knife
   def bootstrap_node(server, host)
     bootstrap = Chef::Knife::Bootstrap.new
     bootstrap.name_args = host
-    bootstrap.config[:ssh_user] = "nina" 
+    bootstrap.config[:ssh_user] = ENV['USER'] 
     # XXX will config
     bootstrap.config[:identity_file] = "~/.ssh/id_rsa"
     # XXX make command switch
-    #bootstrap.config[:chef_node_name] = [server, Chef::Config[:knife][:realm].join("")
-    bootstrap.config[:chef_node_name] = server + ".bytepimps.net"
+    bootstrap.config[:chef_node_name] = server + Chef::Config[:knife][:realm]
     bootstrap.config[:distro] = "chef-full"
     bootstrap.config[:run_list] = config[:runlist]
     bootstrap.config[:use_sudo] = true
