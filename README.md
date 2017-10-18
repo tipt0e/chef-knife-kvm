@@ -8,6 +8,7 @@ Supports GSSAPI ssh connections with qemu+ssh and Net::SSH.
 requirements:
 * fog-libvirt
 * net-ssh
+
 If you want to use GSSAPI with ssh you will need:
 * net-ssh-krb
 
