@@ -29,7 +29,7 @@ class KvmCreate < Chef::Knife
     :long => "--password PASSWORD",
     :description => "SSH password",
     :proc => Proc.new { |key| Chef::Config[:knife][:pwd] = key }
-   
+  
   option :kvmname,
     :short => "-N NAME",
     :long => "--node-name NAME",
@@ -45,7 +45,7 @@ class KvmCreate < Chef::Knife
   option :oldip,
     :short => "-Q IP",
     :long => "--old-ip IP",
-    :description => "Orginal IP Address from cloned image",
+    :description => "Original IP Address from cloned image",
     :proc => Proc.new { |q| Chef::Config[:knife][:oldip] = q }
   
   option :strap,
@@ -104,7 +104,7 @@ class KvmCreate < Chef::Knife
   option :volfmt,
     :short => "-F VOLUME_FMT",
     :long => "--fmt VOLUME_FMT",
-    :description => "Disk format for volume ( qcow2/img/raw ) defaults to qcow2",
+    :description => "Disk format for volume ( qcow2 || raw ) defaults to qcow2",
     :proc => Proc.new { |f| Chef::Config[:knife][:volfmt] = f }
 
   option :itype,
@@ -147,10 +147,11 @@ class KvmCreate < Chef::Knife
     kvmconf = Chef::Config[:knife]
     kvmvol = [kvmconf[:kvmname], ".qcow2"].join("")
     clonevol = [kvmconf[:kvmname], "_r.qcow2"].join("")
-    mem = kvmconf[:mem].to_i * 1024 
+    defpath = "/var/lib/libvirt/images/"
     # XXX defaults for bytepimps - change or
     # eliminate to your liking - just here for
     # testing convenience
+    kvmconf[:usr] ||= "nina"
     kvmconf[:template] ||= "centos-7-image.qcow2"
     kvmconf[:cpus] ||= 1
     kvmconf[:mem] ||= "1024"
@@ -170,6 +171,7 @@ class KvmCreate < Chef::Knife
       oldip = kvmconf[:oldip] 
     end
     # ^ end hardcodes ^
+    mem = kvmconf[:mem].to_i * 1024 
     kvmconf[:volfmt] ||= "qcow2"
 
     unless kvmconf[:kvmname] && kvmconf[:kvmip] && kvmconf[:oldip] 
@@ -183,12 +185,17 @@ class KvmCreate < Chef::Knife
 				 :libvirt_uri => virturi
                                })
 
+    # clone volume from template - our cheat to create a vm from template 
+    # the clone is always created in the 'default' volume pool, but he set the
+    # new volume below to the desired pool target
     wait_spin {
       puts ["Creating volume", kvmvol, "for VM", kvmconf[:kvmname]].join(" ")
-      # cheating - need to use API
-      res = system( ["virsh -c", virturi, "vol-clone", kvmconf[:template], clonevol, "--pool", kvmconf[:pool]].join(" ") )
+      tempvol = compute.volumes.all(:name => kvmconf[:template], :pool_name => kvmconf[:pool]).first
+      realvol = tempvol.clone_volume(clonevol)
     }
-    # spin it up
+
+    # our true volume pool is below 
+    # spin it ip
     newvm = compute.servers.create(
                       { :name => kvmconf[:kvmname],
 		        :volume_pool_name => kvmconf[:pool],
@@ -200,7 +207,6 @@ class KvmCreate < Chef::Knife
 			:cpus => kvmconf[:cpus],
 			:memory_size => mem,
 		      })
-
     puts ["Volume created for VM ", kvmconf[:kvmname]].join("")
 
     # get volume_key for our volume to determine the absolute path
@@ -222,16 +228,17 @@ class KvmCreate < Chef::Knife
     vpath = vpath + "/"
     vpath[0] = ""
     cpath = vpath + clonevol
+    rpath = defpath + clonevol 
     # still finding a way to do an stream upload from the template to the newly created volume
     # but this cheat works for now - copy our template volume over the blank volume while the
     # VM is shut off... it is none the wiser when brought up becaue the xml is identical
     # Also an argument for the SSH key - ~/.ssh for now
     wait_spin {
-      Net::SSH.start(kvmconf[:hv], kvmconf[:usr], :keys => "~/.ssh/id_rsa") do |ssh|
-        ssh.exec!(["mv -f ", cpath, " ", volkey].join(""))
-      end	
-      delvol = compute.volume_action( cpath, :delete )
-      sleep(2)
+      Net::SSH.start(kvmconf[:hv], ENV['USER'], :keys => ["~/.ssh/id_rsa"]) do |ssh|
+        ssh.exec!(["sudo cp -f ", cpath, " ", volkey].join(""))
+      end
+      # delete orphaned clone
+      delvol = compute.volume_action( rpath, :delete )
     }
 
     puts ["Powering on VM", newvm.name].join(" ")
@@ -242,7 +249,7 @@ class KvmCreate < Chef::Knife
     }
     puts ["VM", newvm.name, "powered ON"].join(" ")
     wait_spin {
-      sleep(15)
+      sleep(20)
     }
     kvmip = kvmconf[:kvmip]
     # XXX makes it simple for my env
@@ -255,10 +262,11 @@ class KvmCreate < Chef::Knife
     puts ["Configuring VM for HOSTNAME", newvm.name, "/ IP", kvmip].join(" ")
 
     # some minor configuration setup - hostname/IP
+    # need to set key 
     wait_spin {
-      Net::SSH.start(oldip, kvmconf[:usr], :keys => "~/.ssh/id_rsa") do |ssh|
-        ssh.exec!(["sudo echo ", newvm.name, " > /etc/hostname"].join(""))
-	ssh.exec!("for i in system password; do echo 'session    optional    pam_mkhomedir.so skel=/etc/skel umask=0077' >> /etc/pam.d/$i-auth-ac; done")
+      Net::SSH.start(oldip, kvmconf[:usr], :keys => ["~/.ssh/id_rsa"]) do |ssh|
+        ssh.exec!(["sudo su -c 'echo ", newvm.name, " > /etc/hostname'"].join(""))
+	ssh.exec!("for i in system password; do sudo echo 'session    optional    pam_mkhomedir.so skel=/etc/skel umask=0077' >> /etc/pam.d/$i-auth-ac; done")
         ssh.exec("sleep 1")
 	# debian
         #ssh.exec!(["sudo perl -p -i -e 's/", oldip, "/", kvmip, "/g' /etc/sysconfig/network-scripts/ifcfg-eth0"].join(""))
@@ -270,7 +278,7 @@ class KvmCreate < Chef::Knife
     newvm.reboot()
     wait_spin {
        newvm.wait_for { ready? }
-       sleep (20)
+       sleep (25)
     }
     puts "Done."
     
@@ -284,12 +292,12 @@ class KvmCreate < Chef::Knife
   def bootstrap_node(server, host)
     bootstrap = Chef::Knife::Bootstrap.new
     bootstrap.name_args = host
-    bootstrap.config[:ssh_user] = kvmconf[:usr] 
+    bootstrap.config[:ssh_user] = "nina" 
     # XXX will config
     bootstrap.config[:identity_file] = "~/.ssh/id_rsa"
     # XXX make command switch
-    bootstrap.config[:chef_node_name] = [server, kvmconf[:realm]].join("")
-    #bootstrap.config[:chef_node_name] = [server, ".bytepimps.net"]
+    #bootstrap.config[:chef_node_name] = [server, Chef::Config[:knife][:realm].join("")
+    bootstrap.config[:chef_node_name] = server + ".bytepimps.net"
     bootstrap.config[:distro] = "chef-full"
     bootstrap.config[:run_list] = config[:runlist]
     bootstrap.config[:use_sudo] = true
