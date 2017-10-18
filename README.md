@@ -8,4 +8,7 @@ requirements:
 * fog-libvirt
 * net-ssh
 
+If you want to use GSSAPI with ssh you will need:
+* net-ssh-krb
+
 In alpha ... more documentation coming forthwith.
