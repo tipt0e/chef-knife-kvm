@@ -131,7 +131,7 @@ class KvmCreate < Chef::Knife
     :proc => Proc.new { |z| Chef::Config[:knife][:iface] = z }
 
   # spinner - mostly useless
-  def wait_spin(fps = 10)11
+  def wait_spin(fps = 10)
     chars = %w[| / - \\]
     delay = 1.0 / fps
     i = 0
