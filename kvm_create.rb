@@ -206,6 +206,7 @@ class KvmCreate < Chef::Knife
 		        :volume_pool_name => kvmconf[:pool],
 			:volume_capacity => kvmconf[:disk],
 			:volume_format_type => kvmconf[:volfmt],
+			:volume_template_name => clonevol,
 			:allocation => kvmconf[:alloc],
 			:network_interface_type => kvmconf[:itype],
 		        :network_bridge_name => kvmconf[:iface],
@@ -214,40 +215,8 @@ class KvmCreate < Chef::Knife
 		      })
     puts ["Volume created for VM ", kvmconf[:kvmname]].join("")
 
-    # get volume_key for our volume to determine the absolute path
-    # to the volume pool of our target 
-    vpath = ""
-    volkey = ""
-    compute.volumes.each do |vol|
-      if vol.name == kvmvol
-        volkey = vol.key
-	arr = volkey.split(/\//)
-	l = arr.length
-        arr.each_index do |i|
-          if i < (l - 1)
-            vpath = vpath + "/" + arr[i]
-          end
-        end
-      end
-    end
-    vpath = vpath + "/"
-    vpath[0] = ""
-    cpath = vpath + clonevol
-    rpath = defpath + clonevol 
-    # still finding a way to do an stream upload from the template to the newly created volume
-    # but this cheat works for now - copy our template volume over the blank volume while the
-    # VM is shut off... it is none the wiser when brought up becaue the xml is identical
-    # Also an argument for the SSH key - ~/.ssh for now
-    wait_spin {
-      Net::SSH.start(kvmconf[:hv], ENV['USER'], {:keys => ["~/.ssh/id_rsa"], :auth_methods => ["publickey", "password", "gssapi-with-mic"]}) do |ssh|
-        ssh.exec!(["sudo cp -f ", cpath, " ", volkey].join(""))
-      end
-      # delete orphaned clone
-      delvol = compute.volume_action( rpath, :delete )
-    }
-
+    # power it on 
     puts ["Powering on VM", newvm.name].join(" ")
-
     newvm.start()
     wait_spin {
       newvm.wait_for { ready? }
