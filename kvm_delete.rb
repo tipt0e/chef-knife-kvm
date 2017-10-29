@@ -45,6 +45,7 @@ class KvmDelete < Chef::Knife
   def run
     kvmconf = Chef::Config[:knife] 
     kvmvol = [kvmconf[:kvmname], ".qcow2"].join("")
+    baccvol = [kvmconf[:kvmname], "_r.qcow2"].join("")
 
     unless kvmconf[:kvmname]
       ui.error("Missing Node Name")
@@ -58,11 +59,15 @@ class KvmDelete < Chef::Knife
                                })
 
     # get volume key 
+    vol = ""
     voluuid = ""
     volname = ""
+    baccname = ""
     compute.volumes.each do |vol|
       if vol.name == kvmvol 
         volname = vol.key
+      elsif vol.name == baccvol
+	baccname = vol.key
       end
     end 
     
@@ -78,9 +83,10 @@ class KvmDelete < Chef::Knife
  
     # tear it down
     puts ["Deleting VM", vmname].join(" ")
+    delvol = compute.volume_action( volname, :delete )
+    delvol = compute.volume_action( baccname, :delete )
     delvm = compute.vm_action( vmuuid, :undefine )
     offvm = compute.vm_action( vmuuid, :destroy)
-    delvol = compute.volume_action( volname, :delete )
     sleep (1)
     puts ["VM", vmname, "DESTROYED."].join(" ")
   end
