@@ -226,12 +226,6 @@ class KvmCreate < Chef::Knife
       sleep(20)
     }
     kvmip = kvmconf[:kvmip]
-    # XXX makes it simple for my env
-    if kvmconf[:hv] == "helium"
-      oldip = "192.168.62.156"
-    else
-      oldip = kvmconf[:oldip] 
-    end
 
     puts ["Configuring VM for HOSTNAME", newvm.name, "/ IP", kvmip].join(" ")
 
