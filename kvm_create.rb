@@ -156,6 +156,7 @@ class KvmCreate < Chef::Knife
     # XXX defaults for bytepimps - change or
     # eliminate to your liking - just here for
     # testing convenience
+=begin
     kvmconf[:usr] ||= "nina"
     kvmconf[:template] ||= "centos-7-image.qcow2"
     kvmconf[:cpus] ||= 1
@@ -175,6 +176,7 @@ class KvmCreate < Chef::Knife
     else
       oldip = kvmconf[:oldip] 
     end
+=end
     # ^ end hardcodes ^
     mem = kvmconf[:mem].to_i * 1024 
     kvmconf[:volfmt] ||= "qcow2"
