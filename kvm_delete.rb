@@ -8,6 +8,7 @@ require 'fog/libvirt'
 require 'net/ssh'
 require 'net/ssh/multi'
 require 'net/scp'
+require 'net/ssh/krb'
 require 'chef/knife/core/bootstrap_context'
 require 'chef/knife'
 require 'chef/knife/ssh'
@@ -29,6 +30,10 @@ class KvmDelete < Chef::Knife
     :description => "SSH password",
     :proc => Proc.new { |key| Chef::Config[:knife][:pwd] = key }
    
+  option :gss,
+    :short => "-g",
+    :description => "Use GSSAPI for SSH connections"
+
   option :kvmname,
     :short => "-N NAME",
     :long => "--node-name NAME",
