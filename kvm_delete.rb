@@ -52,8 +52,6 @@ class KvmDelete < Chef::Knife
       exit 1
     end
 
-    kvmconf[:hv] ||= "hydrogen"
-
     compute = Fog::Compute.new({ :provider => "libvirt",
 				 :libvirt_uri => ["qemu+ssh://", kvmconf[:hv], "/system"].join("")
                                })
